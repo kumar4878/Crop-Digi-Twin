@@ -1,0 +1,152 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------
+  # PostgreSQL (Event Store / Relational Data)
+  # ----------------------------------------
+  postgres:
+    image: postgis/postgis:15-3.4-alpine
+    container_name: crop_farming_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: crop_farming
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/init_gis.sql:/docker-entrypoint-initdb.d/init_gis.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d crop_farming"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # ----------------------------------------
+  # MongoDB (Application Data / Read Models)
+  # ----------------------------------------
+  mongo:
+    image: mongo:6-jammy
+    container_name: crop_farming_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo "db.runCommand('ping').ok" | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # ----------------------------------------
+  # Redis (Caching & Task Queue)
+  # ----------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: crop_farming_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  # ----------------------------------------
+  # Node.js Backend API
+  # ----------------------------------------
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crop_farming_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/crop_farming
+      - MONGODB_URI=mongodb://mongo:27017/crop_farming_v2
+      - REDIS_URL=redis://redis:6379
+      # Security (Update in production)
+      - JWT_SECRET=your-jwt-secret-change-in-production
+      - JWT_REFRESH_SECRET=your-refresh-secret-change-in-production
+      - JWT_ACCESS_EXPIRY=15m
+      - JWT_REFRESH_EXPIRY=30d
+      # External APIs (Replace with actual values or use .env)
+      # - WEATHER_API_KEY=
+      # - WEATHER_BASE_URL=https://api.openweathermap.org/data/3.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  # ----------------------------------------
+  # Data Ingestion Worker
+  # ----------------------------------------
+  ingest:
+    build:
+      context: ./ingest
+      dockerfile: Dockerfile
+    container_name: crop_farming_ingest
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_DB: crop_farming
+      PG_USER: postgres
+      PG_PASSWORD: password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data:/data
+      - ./ingest/ingest_villages.py:/app/ingest_villages.py
+    networks:
+      - app_network
+
+  # ----------------------------------------
+  # API Integration Testing Worker
+  # ----------------------------------------
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: crop_farming_worker
+    env_file:
+      - backend/.env.gis
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/crop-digital-twin-490904-0e7a7bddbf0f.json
+    volumes:
+      - ./data:/data
+      - ./secrets:/app/secrets
+      - ./worker/worker.py:/app/worker.py
+      - ./worker/run.sh:/app/run.sh
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
+
+networks:
+  app_network:
+    driver: bridge
