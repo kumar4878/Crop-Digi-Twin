@@ -16,7 +16,11 @@ import pestRoutes from './routes/pest.routes';
 import weatherRoutes from './routes/weather.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import sapRoutes from './routes/sap.routes';
+import eventRoutes from './routes/event.routes';
+import spatialRoutes from './routes/spatial.routes';
+import gddRoutes from './routes/gdd.routes';
 import { startDDECron } from './cron/dde.cron';
+import { startGDDEngineCron } from './cron/gdd.cron';
 
 const app = express();
 
@@ -49,6 +53,9 @@ app.use('/api/pest', pestRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/integration/sap', sapRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/spatial', spatialRoutes);
+app.use('/api/gdd', gddRoutes);
 
 // Edge Sync Endpoint (existing)
 app.post('/api/sync/events', async (req, res) => {
@@ -75,6 +82,7 @@ async function startServer() {
   await connectRedis();
 
   startDDECron();
+  startGDDEngineCron();
 
   app.listen(config.port, () => {
     console.log(`\n🌾 Crop Digitwin Platform V2`);

@@ -9,6 +9,8 @@ import {
     ArrowLeft, MapPin, Wheat, Plus, MoreVertical, Droplets, ThermometerSun, Loader2, X, Trash2, Edit2
 } from 'lucide-react'
 import { getFarmById, createField, deleteField, assignCropToField } from '@/features/farms/api/farms'
+import { EventTimeline } from '@/components/features/events/EventTimeline'
+import { GDDProgress } from '@/components/features/gdd/GDDProgress'
 
 export function FarmDetailPage() {
     const { farmId } = useParams()
@@ -144,9 +146,20 @@ export function FarmDetailPage() {
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <CardTitle className="text-base">{field.name}</CardTitle>
-                                            <p className="text-sm text-muted-foreground">
+                                            <p className="text-sm text-muted-foreground mb-2">
                                                 {field.area} acres • {(field.soilType || '').replace(/_/g, ' ')}
                                             </p>
+                                            
+                                            {field.villageCode ? (
+                                                <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                                                    <MapPin className="h-3 w-3 mr-1 inline" />
+                                                    Geo-Verified: {field.villageName} ({field.villageMatchConfidence}%)
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="text-[10px] text-amber-600 bg-amber-50">
+                                                    Pending Geo-Verification
+                                                </Badge>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-2 relative">
                                             <Badge variant={field.status === 'ACTIVE' ? 'default' : 'secondary'}>
@@ -182,13 +195,20 @@ export function FarmDetailPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     {field.currentCrop ? (
-                                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                                            <div className="flex items-center gap-3">
-                                                <Wheat className="h-5 w-5 text-primary" />
-                                                <div>
-                                                    <p className="font-medium text-sm">{field.currentCrop.cropName}</p>
-                                                    <p className="text-xs text-muted-foreground">Stage: {field.currentCrop.status || 'ACTIVE'}</p>
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                                                <div className="flex items-center gap-3">
+                                                    <Wheat className="h-5 w-5 text-primary" />
+                                                    <div>
+                                                        <p className="font-medium text-sm">{field.currentCrop.cropName}</p>
+                                                        <p className="text-xs text-muted-foreground">Stage: {field.currentCrop.status || 'ACTIVE'}</p>
+                                                    </div>
                                                 </div>
+                                            </div>
+                                            
+                                            {/* GDD Engine Component */}
+                                            <div className="mt-2">
+                                                <GDDProgress fieldId={field._id} />
                                             </div>
                                         </div>
                                     ) : (
@@ -219,6 +239,13 @@ export function FarmDetailPage() {
                                             <span>{(field.irrigationType || '').replace(/_/g, ' ')} Irrigation</span>
                                         </div>
                                     </div>
+                                    
+                                    {/* Event Ledger Components */}
+                                    {field.currentCrop && (
+                                        <div className="pt-2 border-t mt-4">
+                                            <EventTimeline plotId={field._id} season={field.currentCrop.season} />
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         ))}

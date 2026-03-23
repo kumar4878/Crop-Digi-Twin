@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
     Satellite, Plane, ShieldCheck, Link2, CheckCircle, XCircle,
-    AlertTriangle, Globe, Eye, BarChart3, Clock, FileCheck,
+    Globe, Eye, BarChart3, Clock, FileCheck,
 } from 'lucide-react'
 
 type Tab = 'eo' | 'drone' | 'agristack'

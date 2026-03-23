@@ -26,6 +26,11 @@ export interface IField extends Document {
     stressLevel: 'LOW' | 'MEDIUM' | 'HIGH';
     lastUpdated: Date;
   };
+  villageCode?: string;
+  villageName?: string;
+  district?: string;
+  state?: string;
+  villageMatchConfidence?: number;
   status: 'ACTIVE' | 'INACTIVE' | 'FALLOW';
   createdAt: Date;
   updatedAt: Date;
@@ -64,6 +69,11 @@ const FieldSchema = new Schema<IField>(
       stressLevel: { type: String, enum: ['LOW', 'MEDIUM', 'HIGH'], default: 'LOW' },
       lastUpdated: { type: Date, default: Date.now },
     },
+    villageCode: String,
+    villageName: String,
+    district: String,
+    state: String,
+    villageMatchConfidence: Number,
     status: { type: String, enum: ['ACTIVE', 'INACTIVE', 'FALLOW'], default: 'ACTIVE' },
   },
   { timestamps: true }

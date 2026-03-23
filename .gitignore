@@ -39,3 +39,30 @@ data/
 
 # Secrets
 secrets/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!composer.json
+
+# Shapefiles
+*.shp
+*.shx
+*.dbf
+*.prj
+*.sbn
+*.sbx
+*.fbn
+*.fbx
+*.ain
+*.aih
+*.atx
+*.ixs
+*.mxs
+*.pji
+*.xml
+*.cpg
+
+# Temporary logs/status
+git_status.txt
+push_error.txt

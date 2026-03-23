@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Plus, MapPin, Wheat, ChevronDown, ChevronUp, ChevronRight, Loader2, X, Leaf } from 'lucide-react'
 import { getFarms, getFarmById, createFarm, createField } from '@/features/farms/api/farms'
 import type { FarmListItem, FarmDetail } from '@/features/farms/api/farms'
+import { EventTimeline } from '@/components/features/events/EventTimeline'
+import { GDDProgress } from '@/components/features/gdd/GDDProgress'
 
 import { MapContainer, TileLayer, Polygon as LeafletPolygon, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -237,9 +239,16 @@ function ExpandableFarmCard({ farm }: { farm: FarmListItem }) {
                                     {detail.fields.map((field) => (
                                         <Card key={field._id} className="bg-background shadow-sm border-primary/10 hover:border-primary/30 transition-colors">
                                             <CardContent className="p-4 space-y-4">
-                                                <div className="flex justify-between items-start">
+                                                <div className="flex justify-between items-start mb-2">
                                                     <div>
-                                                        <h4 className="font-semibold">{field.name}</h4>
+                                                        <h4 className="font-semibold flex items-center gap-2">
+                                                            {field.name}
+                                                            {field.villageCode && (
+                                                                <Badge variant="outline" className="text-[9px] bg-emerald-50 text-emerald-700 border-emerald-200">
+                                                                    <MapPin className="h-3 w-3 mr-1 inline" /> Geo-Verified ({field.villageMatchConfidence}%)
+                                                                </Badge>
+                                                            )}
+                                                        </h4>
                                                         <p className="text-xs text-muted-foreground">{field.area} Acres • {field.status}</p>
                                                     </div>
                                                     {field.healthMetrics ? (
@@ -255,9 +264,31 @@ function ExpandableFarmCard({ farm }: { farm: FarmListItem }) {
                                                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                                         <Leaf className="h-5 w-5 text-primary" />
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium">{field.currentCrop?.cropName || 'Fallow'}</p>
-                                                        <p className="text-xs text-muted-foreground">{field.currentCrop?.currentStage || 'No active crop'}</p>
+                                                    <div className="w-full">
+                                                        <p className="text-sm font-medium">{field.currentCrop?.cropName || 'Fallow / No Crop Assigned'}</p>
+                                                        <p className="text-xs text-muted-foreground">{field.currentCrop?.currentStage || 'No active digital twin tracking'}</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="mt-4 space-y-4">
+                                                    {field.currentCrop ? (
+                                                        <GDDProgress fieldId={field._id} />
+                                                    ) : (
+                                                        <div className="text-[10px] text-muted-foreground italic px-1">
+                                                            GDD Engine ready (Waiting for crop assignment)
+                                                        </div>
+                                                    )}
+                                                    
+                                                    <div className="pt-2 border-t">
+                                                        <details className="text-xs group">
+                                                            <summary className="cursor-pointer font-medium text-primary hover:text-primary/80 mb-2 list-none flex items-center gap-1">
+                                                                <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+                                                                View Immutable Digital Twin Ledger
+                                                            </summary>
+                                                            <div className="mt-2 border rounded-md p-2 bg-slate-50">
+                                                                <EventTimeline plotId={field._id} season={field.currentCrop?.season || 'KHARIF-2024'} />
+                                                            </div>
+                                                        </details>
                                                     </div>
                                                 </div>
 

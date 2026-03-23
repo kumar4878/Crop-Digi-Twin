@@ -37,10 +37,14 @@ export interface FarmDetail {
         _id: string
         name: string
         area: number
+        villageCode?: string
+        villageName?: string
+        villageMatchConfidence?: number
         currentCrop?: {
             cropName: string
             status: string
             currentStage?: string
+            season?: string
         }
         healthMetrics?: {
             ndvi: number
